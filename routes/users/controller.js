@@ -1,6 +1,7 @@
 const { user: users } = require("../../models");
 const { get } = require("../../config");
 const objectId = require("mongodb").ObjectId;
+const {hashPassword, comparedPassword} = require("../../helpers");
 
 module.exports = {
     getAll: (req, res) => {
@@ -47,10 +48,12 @@ module.exports = {
                 console.log(error);
             });
     },
-    addOne: (req, res) => {
+    addOne: async (req, res) => {
+        const hash = await hashPassword(req.body.password);
+
         get()
             .collection("users")
-            .insertOne(req.body)
+            .insertOne({...req.body, password: hash})
             .then(result => {
                 res.status(201).json({
                     message: "Data successfully added",
@@ -61,6 +64,20 @@ module.exports = {
                 console.log(error);
             });
     },
+    // addOne: (req, res) => {
+    //     get()
+    //         .collection("users")
+    //         .insertOne(req.body)
+    //         .then(result => {
+    //             res.status(201).json({
+    //                 message: "Data successfully added",
+    //                 data: result
+    //             });
+    //         })
+    //         .catch(error => {
+    //             console.log(error);
+    //         });
+    // },
     updateOne: (req, res) => {
         const { id } = req.params;
         get()
@@ -81,15 +98,36 @@ module.exports = {
 
         get()
             .collection("users")
-            .findOne({ email: body.email, password: body.password })
-            .then(response => {
-                const { email, firstName } = response;
-                res.status(200).json({
-                    message: "Login successfull",
-                    data: { email, firstName }
+            .findOne({ email: body.email })
+            .then(async response => {
+                const compared = await comparedPassword(
+                    req.body.password,
+                    response.password
+                );
+
+                if (compared === true) {
+                    const {email, firstName} = response;
+                    res.status(200).json({
+                        message: "Login successfull",
+                        data: { email, firstName }
                 });
+                }
             });
     }
+    // login: (req, res) => {
+    //     const { body } = req;
+
+    //     get()
+    //         .collection("users")
+    //         .findOne({ email: body.email, password: body.password })
+    //         .then(response => {
+    //             const { email, firstName } = response;
+    //             res.status(200).json({
+    //                 message: "Login successfull",
+    //                 data: { email, firstName }
+    //             });
+    //         });
+    // }
 };
 
 

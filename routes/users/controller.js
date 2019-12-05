@@ -2,6 +2,8 @@ const { user: users } = require("../../models");
 const { get } = require("../../config");
 const objectId = require("mongodb").ObjectId;
 const {hashPassword, comparedPassword} = require("../../helpers");
+const {JWT_SECRET_KEY} = require("../../config");
+const jwt = require("jsonwebtoken");
 
 module.exports = {
     getAll: (req, res) => {
@@ -107,11 +109,29 @@ module.exports = {
 
                 if (compared === true) {
                     const {email, firstName} = response;
+                    const token = jwt.sign (
+                        {
+                            email,
+                            firstName
+                        },
+                        JWT_SECRET_KEY,
+                        {
+                            expiresIn: "1h"
+                        }
+                    );
                     res.status(200).json({
                         message: "Login successfull",
-                        data: { email, firstName }
+                        data: token
                 });
                 }
+
+                // if (compared === true) {
+                //     const {email, firstName} = response;
+                //     res.status(200).json({
+                //         message: "Login successfull",
+                //         data: { email, firstName }
+                // });
+                // }
             });
     }
     // login: (req, res) => {
